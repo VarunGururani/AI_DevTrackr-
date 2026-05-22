@@ -42,6 +42,21 @@ npm install
 npm run dev
 ```
 
+## Deployment
+
+### Backend (Render)
+1. Create a Web Service on Render pointing to the `backend` folder
+2. Set Root Directory to `backend`
+3. Build Command: `npm install`
+4. Start Command: `npm start`
+5. Add environment variables: `MONGODB_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `FRONTEND_URL`
+
+### Frontend (Vercel)
+1. Import your repo on Vercel
+2. Set Root Directory to `frontend`
+3. Framework Preset: Vite
+4. Add environment variable: `VITE_API_URL=https://your-render-backend.onrender.com/api`
+
 ## Flow
 1. User connects GitHub
 2. System fetches repo activity
