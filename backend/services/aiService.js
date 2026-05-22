@@ -1,10 +1,9 @@
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 class AIService {
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
 
   // Summarize commits using AI
@@ -15,7 +14,7 @@ class AIService {
       date: c.commit?.author?.date || c.date
     }));
 
-    const prompt = `Analyze these git commits and provide a concise productivity summary:
+    const prompt = `You are a developer productivity analyst. Analyze these git commits and provide a concise productivity summary:
 
 Commits:
 ${JSON.stringify(commitMessages, null, 2)}
@@ -27,17 +26,9 @@ Provide:
 4. Notable patterns`;
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: 'You are a developer productivity analyst. Provide concise, actionable insights.' },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      });
-
-      return response.choices[0].message.content;
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
     } catch (error) {
       // Fallback analysis without API
       return this.fallbackCommitSummary(commitMessages);
@@ -193,7 +184,7 @@ Provide:
 
   // Generate AI sprint summary
   async generateSprintSummary(analysis) {
-    const prompt = `Based on this sprint data, provide a brief progress summary:
+    const prompt = `You are a scrum master providing brief sprint reviews. Based on this sprint data, provide a brief progress summary:
 
 Sprint Metrics:
 - ${analysis.metrics.totalCommits} commits (${analysis.metrics.dailyCommitRate}/day)
@@ -203,17 +194,9 @@ Sprint Metrics:
 
 Provide 2-3 sentences summarizing sprint progress and one suggestion for improvement.`;
 
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a scrum master providing brief sprint reviews.' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 200,
-      temperature: 0.7
-    });
-
-    return response.choices[0].message.content;
+    const result = await this.model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   }
 
   // Fallback commit summary (no API needed)

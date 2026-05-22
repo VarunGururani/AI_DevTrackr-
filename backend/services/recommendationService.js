@@ -1,10 +1,9 @@
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 class RecommendationService {
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
 
   // Suggest task prioritization based on issues and PRs
@@ -224,7 +223,7 @@ class RecommendationService {
 
   // Generate AI prioritization advice
   async generatePrioritizationAdvice(topIssues, topPRs) {
-    const prompt = `Based on this project state, provide brief prioritization advice:
+    const prompt = `You are a project manager. Based on this project state, provide brief prioritization advice:
 
 Top Issues:
 ${topIssues.map(i => `- #${i.number} "${i.title}" (${i.priority}, ${i.ageInDays} days old)`).join('\n')}
@@ -234,40 +233,24 @@ ${topPRs.map(p => `- #${p.number} "${p.title}" (waiting ${p.ageInDays} days)`).j
 
 Provide 3 actionable recommendations in bullet points.`;
 
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a project manager. Give concise, actionable prioritization advice.' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 250,
-      temperature: 0.7
-    });
-
-    return response.choices[0].message.content;
+    const result = await this.model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   }
 
   // Generate AI bottleneck summary
   async generateBottleneckSummary(bottlenecks) {
     if (bottlenecks.length === 0) return 'No significant bottlenecks detected. Workflow is healthy.';
 
-    const prompt = `Summarize these development bottlenecks and suggest fixes:
+    const prompt = `You are a DevOps consultant. Summarize these development bottlenecks and suggest fixes:
 
 ${bottlenecks.map(b => `- ${b.title} (${b.severity}): ${b.description}`).join('\n')}
 
 Provide a 2-3 sentence summary with top priority action.`;
 
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a DevOps consultant. Be concise and actionable.' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 200,
-      temperature: 0.7
-    });
-
-    return response.choices[0].message.content;
+    const result = await this.model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   }
 
   // Fallback prioritization advice
