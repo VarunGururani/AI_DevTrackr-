@@ -22,6 +22,7 @@ app.use('/api/github', require('./routes/github'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/ai/recommendations', require('./routes/recommendations'));
+app.use('/api/export', require('./routes/export'));
 
 // Health check
 app.get('/api/health', (req, res) => {
